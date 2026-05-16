@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Toasty Hub</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -523,14 +524,8 @@
 <section id="games">
   <div class="section-label">Supported Games</div>
   <h2 class="section-title">Where We Burn</h2>
-  <div class="games-grid">
-    <div class="game-card reveal"><div class="game-icon">⚒️</div><div class="game-info"><div class="game-name">The Forge</div><div class="game-badge">✓ Supported</div></div></div>
-    <div class="game-card reveal"><div class="game-icon">🌙</div><div class="game-info"><div class="game-name">99 Nights Only in Game</div><div class="game-badge">✓ Supported</div></div></div>
-    <div class="game-card reveal"><div class="game-icon">💀</div><div class="game-info"><div class="game-name">Forsaken</div><div class="game-badge">✓ Supported</div></div></div>
-    <div class="game-card reveal"><div class="game-icon">⚡</div><div class="game-info"><div class="game-name">Violence D</div><div class="game-badge">✓ Supported</div></div></div>
-    <div class="game-card reveal"><div class="game-icon">⚽</div><div class="game-info"><div class="game-name">Blue Lock</div><div class="game-badge">✓ Supported</div></div></div>
-    <div class="game-card reveal"><div class="game-icon">🛹</div><div class="game-info"><div class="game-name">Skateboard Obby</div><div class="game-badge">✓ Supported</div></div></div>
-    <div class="game-card reveal"><div class="game-icon">🚢</div><div class="game-info"><div class="game-name">Build a Boat for Treasure</div><div class="game-badge">✓ Supported</div></div></div>
+  <div class="games-grid" id="gamesGrid">
+    <!-- Loaded from Supabase -->
   </div>
 </section>
 
@@ -602,6 +597,64 @@
 <div class="toast" id="toast">✅ Script copied!</div>
 
 <script>
+// ── SUPABASE ──
+const SUPABASE_URL      = 'https://idlkxseehwtvadnxgvze.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlkbGt4c2VlaHd0dmFkbnhndnplIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5NTQ4MDIsImV4cCI6MjA5NDUzMDgwMn0.3R5biCPgPxsI5pKS-xFWFXFawNUB4mVejpODta2Xe_M';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let cfg = {
+  discord: 'https://discord.gg/ETH98p8AmT',
+  scriptUrl: 'https://api.jnkie.com/api/v1/luascripts/public/3d56b3886f68d784b8beabb6840912b5d9fc31a7030a6f89b21154b09cf2f7d5/download',
+  scriptHint: '⚡ Paste in your executor and run',
+  keyTitle: 'Key System Active',
+  keyDesc: 'This script uses a key system. Get your free key on our Discord!',
+  discordTitle: 'Come Hang with the Toasties',
+  discordDesc: 'Get support, grab your free key, request new games, and stay up to date with script updates.',
+  stat1val:'7+', stat1lbl:'Games', stat2val:'1', stat2lbl:'Loader',
+  stat3val:'Free', stat3lbl:'Always', stat4val:'🔥', stat4lbl:'Community',
+  maintenance: '',
+};
+let SCRIPT = `loadstring(game:HttpGet("${cfg.scriptUrl}"))()` ;
+
+async function loadFromSupabase() {
+  try {
+    const { data } = await sb.from('toasty_config').select('value').eq('id','main').single();
+    if (data?.value) Object.assign(cfg, data.value);
+  } catch(e) {}
+  SCRIPT = `loadstring(game:HttpGet("${cfg.scriptUrl}"))()` ;
+  document.querySelector('.script-code').innerHTML =
+    `<span class="kw">loadstring</span>(<span class="kw">game</span>:<span class="kw">HttpGet</span>(<span class="str">"${cfg.scriptUrl}"</span>))()` ;
+  document.querySelector('.script-footer-hint').textContent = cfg.scriptHint;
+  document.querySelector('.key-notice-text strong').textContent = cfg.keyTitle;
+  document.querySelector('.key-notice-text span').textContent = cfg.keyDesc;
+  document.querySelectorAll('a[href*="discord.gg"]').forEach(a => a.href = cfg.discord);
+  document.querySelector('.discord-title').textContent = cfg.discordTitle;
+  document.querySelector('.discord-desc').textContent = cfg.discordDesc;
+  const stats = document.querySelectorAll('.stat-item');
+  [[cfg.stat1val,cfg.stat1lbl],[cfg.stat2val,cfg.stat2lbl],[cfg.stat3val,cfg.stat3lbl],[cfg.stat4val,cfg.stat4lbl]]
+    .forEach(([v,l],i) => { if(stats[i]){ stats[i].querySelector('.stat-value').textContent=v; stats[i].querySelector('.stat-label').textContent=l; }});
+  if (cfg.maintenance) {
+    const b = document.createElement('div');
+    b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:200;background:#e8730a;color:#0e0a07;text-align:center;padding:10px;font-family:Rajdhani,sans-serif;font-weight:700;letter-spacing:0.1em;';
+    b.textContent = cfg.maintenance; document.body.prepend(b);
+  }
+  try {
+    const { data: games } = await sb.from('toasty_games').select('*').order('sort_order');
+    if (games?.length) {
+      document.getElementById('gamesGrid').innerHTML = games.map(g =>
+        `<div class="game-card reveal"><div class="game-icon">${g.icon||'🎮'}</div><div class="game-info"><div class="game-name">${g.name}</div><div class="game-badge">${g.status==='Supported'?'✓':g.status==='Coming Soon'?'⏳':'✗'} ${g.status}</div></div></div>`
+      ).join('');
+      initReveal();
+    }
+  } catch(e) {
+    document.getElementById('gamesGrid').innerHTML = [
+      ['⚒️','The Forge'],['🌙','99 Nights Only in Game'],['💀','Forsaken'],
+      ['⚡','Violence D'],['⚽','Blue Lock'],['🛹','Skateboard Obby'],['🚢','Build a Boat for Treasure']
+    ].map(([i,n])=>`<div class="game-card reveal"><div class="game-icon">${i}</div><div class="game-info"><div class="game-name">${n}</div><div class="game-badge">✓ Supported</div></div></div>`).join('');
+    initReveal();
+  }
+}
+
 // ── EMBER PARTICLES ──
 const container = document.getElementById('embers');
 for (let i = 0; i < 22; i++) {
@@ -621,7 +674,7 @@ for (let i = 0; i < 22; i++) {
 }
 
 // ── COPY SCRIPT ──
-const SCRIPT = `loadstring(game:HttpGet("https://api.jnkie.com/api/v1/luascripts/public/3d56b3886f68d784b8beabb6840912b5d9fc31a7030a6f89b21154b09cf2f7d5/download"))()`;
+const SCRIPT_INIT = `loadstring(game:HttpGet("https://api.jnkie.com/api/v1/luascripts/public/3d56b3886f68d784b8beabb6840912b5d9fc31a7030a6f89b21154b09cf2f7d5/download"))()`;
 function copyScript() {
   navigator.clipboard.writeText(SCRIPT).then(() => {
     const btn = document.getElementById('copyBtn');
@@ -638,11 +691,17 @@ function copyScript() {
 }
 
 // ── SCROLL REVEAL ──
-document.querySelectorAll('.reveal').forEach(el =>
-  new IntersectionObserver((entries) => {
-    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
-  }, { threshold: 0.1 }).observe(el)
-);
+function initReveal() {
+  document.querySelectorAll('.reveal').forEach(el =>
+    new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+    }, { threshold: 0.1 }).observe(el)
+  );
+}
+initReveal();
+
+// ── START ──
+loadFromSupabase();
 </script>
 </body>
 </html>
