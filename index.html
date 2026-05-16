@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Toasty Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:          #0e0a07;
+    --surface:     #1c1208;
+    --surface2:    #221608;
+    --orange:      #e8730a;
+    --orange-glow: #ff8c1a;
+    --amber:       #c4570a;
+    --tan:         #c49a6c;
+    --cream:       #f0d9b5;
+    --muted:       #7a6040;
+    --border:      #2e1e0a;
+    --border-hot:  #e8730a44;
+    --discord:     #5865F2;
+    --discord-dk:  #4752c4;
+    --green:       #3ecf4b;
+    --red:         #e05555;
+    --key-badge:   #e8730a1a;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--cream);
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 400;
+    overflow-x: hidden;
+  }
+
+  /* noise overlay */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 999; opacity: 0.4;
+  }
+
+  /* ── EMBERS ── */
+  .embers { position: fixed; inset: 0; pointer-events: none; z-index: 1; overflow: hidden; }
+  .ember  { position: absolute; border-radius: 50%; animation: drift linear infinite; opacity: 0; }
+  @keyframes drift {
+    0%   { transform: translateY(110vh) translateX(0) scale(1); opacity: 0; }
+    10%  { opacity: 0.8; }
+    90%  { opacity: 0.3; }
+    100% { transform: translateY(-10vh) translateX(var(--dx)) scale(0.2); opacity: 0; }
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 48px;
+    background: linear-gradient(to bottom, rgba(14,10,7,0.98), transparent);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.6rem; letter-spacing: 0.1em;
+    color: var(--orange-glow);
+    text-shadow: 0 0 20px var(--orange);
+  }
+  .nav-links { display: flex; gap: 28px; align-items: center; }
+  .nav-links a {
+    font-family: 'Rajdhani', sans-serif; font-weight: 600;
+    font-size: 0.85rem; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--muted); text-decoration: none; transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--orange-glow); }
+  .nav-discord {
+    color: #fff !important; background: var(--discord);
+    padding: 7px 16px; border-radius: 6px;
+    display: flex; align-items: center; gap: 7px;
+    transition: background 0.2s, transform 0.2s !important;
+  }
+  .nav-discord:hover { background: var(--discord-dk) !important; transform: translateY(-1px); }
+
+  /* ── HERO ── */
+  .hero {
+    position: relative; min-height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center; padding: 120px 24px 80px; overflow: hidden;
+  }
+  .hero-bg {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 50% 60%, #3a1a0022 0%, transparent 70%),
+      radial-gradient(ellipse 40% 40% at 50% 80%, #e8730a18 0%, transparent 60%);
+  }
+  .hero-glow {
+    position: absolute; width: 600px; height: 600px; border-radius: 50%;
+    background: radial-gradient(circle, #e8730a14 0%, transparent 70%);
+    top: 50%; left: 50%; transform: translate(-50%,-50%);
+    animation: pulse 4s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%,100% { transform: translate(-50%,-50%) scale(1); opacity: 0.5; }
+    50%      { transform: translate(-50%,-50%) scale(1.15); opacity: 1; }
+  }
+  .hero-banner {
+    position: relative; width: min(700px,90vw); border-radius: 8px;
+    overflow: hidden; margin-bottom: 40px;
+    box-shadow: 0 0 80px #e8730a33, 0 0 160px #e8730a11;
+    border: 1px solid var(--border-hot);
+    animation: fadeUp 1s ease both;
+  }
+  .hero-banner img { width: 100%; display: block; }
+
+  .hero-subtitle {
+    font-weight: 300; font-size: 1.1rem; letter-spacing: 0.4em;
+    text-transform: uppercase; color: var(--tan);
+    margin-bottom: 48px; animation: fadeUp 1s 0.2s ease both;
+  }
+  .hero-cta {
+    display: flex; gap: 16px; flex-wrap: wrap;
+    justify-content: center; animation: fadeUp 1s 0.4s ease both;
+  }
+  @keyframes fadeUp {
+    from { opacity:0; transform:translateY(30px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+
+  /* ── BUTTONS ── */
+  .btn-primary {
+    font-family: 'Bebas Neue', sans-serif; font-size: 1rem;
+    letter-spacing: 0.2em; padding: 14px 36px;
+    background: linear-gradient(135deg, var(--amber), var(--orange-glow));
+    color: #0e0a07; border: none; border-radius: 4px;
+    cursor: pointer; text-decoration: none; display: inline-block;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 20px #e8730a44;
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px #e8730a66; }
+
+  .btn-secondary {
+    font-family: 'Bebas Neue', sans-serif; font-size: 1rem;
+    letter-spacing: 0.2em; padding: 14px 36px;
+    background: transparent; color: var(--tan);
+    border: 1px solid var(--border-hot); border-radius: 4px;
+    cursor: pointer; text-decoration: none; display: inline-block;
+    transition: all 0.2s;
+  }
+  .btn-secondary:hover { border-color: var(--orange); color: var(--orange-glow); background: #e8730a0a; }
+
+  .btn-discord {
+    font-family: 'Bebas Neue', sans-serif; font-size: 1rem;
+    letter-spacing: 0.2em; padding: 14px 36px;
+    background: var(--discord); color: #fff;
+    border: none; border-radius: 4px; cursor: pointer;
+    text-decoration: none; display: inline-flex; align-items: center; gap: 10px;
+    transition: all 0.2s; box-shadow: 0 4px 20px #5865F244;
+  }
+  .btn-discord:hover { background: var(--discord-dk); transform: translateY(-2px); box-shadow: 0 8px 30px #5865F266; }
+
+  /* ── STATS ── */
+  .stats-bar {
+    display: flex; max-width: 700px; margin: 0 auto 80px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; overflow: hidden;
+    position: relative; z-index: 2;
+    animation: fadeUp 1s 0.6s ease both;
+  }
+  .stat-item { flex:1; padding:20px 12px; text-align:center; border-right:1px solid var(--border); }
+  .stat-item:last-child { border-right: none; }
+  .stat-value {
+    font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem;
+    color: var(--orange-glow); text-shadow: 0 0 16px #e8730a66; display: block;
+  }
+  .stat-label { font-size: 0.7rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--muted); margin-top:4px; }
+
+  /* ── DIVIDER ── */
+  .divider {
+    display: flex; align-items: center; gap: 16px;
+    max-width: 800px; margin: 0 auto 64px; padding: 0 24px;
+  }
+  .divider::before,.divider::after {
+    content:''; flex:1; height:1px;
+    background: linear-gradient(to right, transparent, var(--border-hot), transparent);
+  }
+  .divider-icon { color: var(--orange); font-size: 1.2rem; }
+
+  /* ── SECTIONS ── */
+  section { position: relative; z-index: 2; padding: 80px 24px; }
+  .section-label {
+    font-weight:600; font-size:0.7rem; letter-spacing:0.5em;
+    text-transform:uppercase; color:var(--orange); text-align:center; margin-bottom:12px;
+  }
+  .section-title {
+    font-family:'Bebas Neue',sans-serif; font-size:clamp(2rem,5vw,3.5rem);
+    letter-spacing:0.05em; color:var(--cream); text-align:center; margin-bottom:48px;
+  }
+
+  /* ── SCRIPT CARD ── */
+  #script { max-width: 860px; margin: 0 auto; }
+
+  /* KEY SYSTEM NOTICE BANNER */
+  .key-notice {
+    background: var(--key-badge);
+    border: 1px solid var(--border-hot);
+    border-radius: 8px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+    animation: fadeUp 0.8s 0.2s ease both;
+  }
+  .key-notice-left {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .key-notice-icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+  }
+  .key-notice-text strong {
+    display: block;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1rem;
+    letter-spacing: 0.12em;
+    color: var(--orange-glow);
+    margin-bottom: 2px;
+  }
+  .key-notice-text span {
+    font-size: 0.82rem;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+  .key-notice-btn {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 0.85rem;
+    letter-spacing: 0.18em;
+    padding: 9px 20px;
+    background: var(--discord);
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    transition: all 0.2s;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .key-notice-btn:hover { background: var(--discord-dk); transform: translateY(-1px); }
+
+  .script-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    overflow: hidden; box-shadow: 0 0 40px #00000066, inset 0 1px 0 #ffffff06;
+  }
+  .script-card-header {
+    background: var(--surface2); border-bottom: 1px solid var(--border);
+    padding: 12px 20px; display: flex; align-items: center; gap: 8px;
+  }
+  .dot { width:10px; height:10px; border-radius:50%; }
+  .dot-red    { background: var(--red); }
+  .dot-yellow { background: #e8c30a; }
+  .dot-green  { background: var(--green); }
+  .script-card-title { margin-left:8px; font-size:0.75rem; letter-spacing:0.15em; color:var(--muted); text-transform:uppercase; }
+  .script-code {
+    padding: 28px 24px; font-family:'Courier New',monospace; font-size:0.85rem;
+    color: var(--tan); line-height:1.6; word-break:break-all;
+    background: var(--surface); user-select:all;
+  }
+  .script-code .kw  { color: var(--orange); }
+  .script-code .str { color: #7ec8a4; }
+  .script-footer {
+    padding: 16px 24px; border-top: 1px solid var(--border);
+    display:flex; justify-content:space-between; align-items:center;
+    gap:12px; flex-wrap:wrap;
+  }
+  .script-footer-hint { font-size:0.75rem; color:var(--muted); letter-spacing:0.1em; }
+  .copy-btn {
+    font-family:'Rajdhani',sans-serif; font-weight:700; font-size:0.8rem;
+    letter-spacing:0.2em; text-transform:uppercase; padding:10px 24px;
+    background: linear-gradient(135deg, var(--amber), var(--orange-glow));
+    color:#0e0a07; border:none; border-radius:4px; cursor:pointer;
+    transition:all 0.2s; display:flex; align-items:center; gap:8px;
+  }
+  .copy-btn:hover { transform:translateY(-1px); box-shadow:0 4px 16px #e8730a44; }
+  .copy-btn.copied { background: var(--green); color:#0e0a07; }
+
+  /* ── STEPS ── */
+  .steps-grid {
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:20px; max-width:960px; margin:0 auto;
+  }
+  .step-card {
+    background:var(--surface); border:1px solid var(--border); border-radius:8px;
+    padding:28px 24px; transition:border-color 0.2s, transform 0.2s;
+  }
+  .step-card:hover { border-color:var(--border-hot); transform:translateY(-3px); }
+  .step-number { font-family:'Bebas Neue',sans-serif; font-size:3rem; color:var(--border-hot); line-height:1; margin-bottom:12px; }
+  .step-title  { font-family:'Bebas Neue',sans-serif; font-size:1.1rem; letter-spacing:0.08em; color:var(--cream); margin-bottom:8px; }
+  .step-text   { font-size:0.88rem; line-height:1.6; color:var(--muted); font-weight:300; }
+
+  /* ── GAMES ── */
+  .games-grid {
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
+    gap:16px; max-width:1100px; margin:0 auto;
+  }
+  .game-card {
+    background:var(--surface); border:1px solid var(--border); border-radius:8px;
+    padding:24px 20px; display:flex; align-items:center; gap:16px;
+    transition:all 0.25s; position:relative; overflow:hidden;
+  }
+  .game-card::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:1px;
+    background:linear-gradient(to right, transparent, var(--orange-glow), transparent);
+    opacity:0; transition:opacity 0.25s;
+  }
+  .game-card:hover { border-color:var(--border-hot); background:var(--surface2); transform:translateY(-3px); box-shadow:0 8px 32px #00000055; }
+  .game-card:hover::before { opacity:1; }
+  .game-icon {
+    width:44px; height:44px;
+    background:linear-gradient(135deg, var(--amber), var(--orange-glow));
+    border-radius:8px; display:flex; align-items:center; justify-content:center;
+    font-size:1.3rem; flex-shrink:0; box-shadow:0 0 16px #e8730a33;
+  }
+  .game-name  { font-weight:700; font-size:1rem; letter-spacing:0.05em; color:var(--cream); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .game-badge { font-size:0.65rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--orange); margin-top:2px; }
+
+  /* ── FEATURES ── */
+  .features-grid {
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+    gap:24px; max-width:960px; margin:0 auto;
+  }
+  .feature-card { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:32px 28px; transition:border-color 0.2s; }
+  .feature-card:hover { border-color:var(--border-hot); }
+  .feature-icon  { font-size:2rem; margin-bottom:16px; }
+  .feature-title { font-family:'Bebas Neue',sans-serif; font-size:1.3rem; letter-spacing:0.08em; color:var(--cream); margin-bottom:10px; }
+  .feature-text  { font-size:0.9rem; line-height:1.7; color:var(--muted); font-weight:300; }
+
+  /* ── DISCORD SECTION ── */
+  #discord { max-width:700px; margin:0 auto; }
+  .discord-card {
+    background:var(--surface); border:1px solid #5865F233; border-radius:12px;
+    padding:52px 40px; text-align:center; position:relative; overflow:hidden;
+    box-shadow:0 0 60px #5865F211;
+  }
+  .discord-card::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:2px;
+    background:linear-gradient(to right, transparent, var(--discord), transparent);
+  }
+  .discord-icon-wrap { font-size:3.5rem; margin-bottom:20px; display:block; animation:float 5s ease-in-out infinite; }
+  @keyframes float { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-10px); } }
+  .discord-title { font-family:'Bebas Neue',sans-serif; font-size:2.2rem; letter-spacing:0.08em; color:var(--cream); margin-bottom:12px; }
+  .discord-desc  { font-size:1rem; line-height:1.7; color:var(--muted); font-weight:300; max-width:440px; margin:0 auto 36px; }
+  .discord-perks { display:flex; gap:16px; justify-content:center; flex-wrap:wrap; margin-bottom:36px; }
+  .discord-perk  { background:#5865F211; border:1px solid #5865F233; border-radius:20px; padding:6px 16px; font-size:0.78rem; letter-spacing:0.15em; text-transform:uppercase; color:#9ca8f5; font-weight:600; }
+
+  /* ── ABOUT ── */
+  .mascot-section { display:flex; align-items:center; justify-content:center; gap:64px; max-width:900px; margin:0 auto; flex-wrap:wrap; }
+  .mascot-img  { width:220px; border-radius:50%; border:2px solid var(--border-hot); box-shadow:0 0 60px #e8730a22; animation:float 5s ease-in-out infinite; }
+  .mascot-text { max-width:420px; }
+  .mascot-title { font-family:'Bebas Neue',sans-serif; font-size:2.4rem; letter-spacing:0.05em; color:var(--cream); margin-bottom:16px; }
+  .mascot-desc  { font-size:1rem; line-height:1.8; color:var(--muted); font-weight:300; }
+
+  /* ── FOOTER ── */
+  footer {
+    position:relative; z-index:2; border-top:1px solid var(--border);
+    padding:40px 48px; display:flex; align-items:center;
+    justify-content:space-between; flex-wrap:wrap; gap:16px;
+  }
+  .footer-logo { font-family:'Bebas Neue',sans-serif; font-size:1.4rem; letter-spacing:0.1em; color:var(--orange); }
+  .footer-text { font-size:0.78rem; color:var(--muted); letter-spacing:0.1em; }
+  .footer-discord {
+    font-family:'Rajdhani',sans-serif; font-weight:700; font-size:0.8rem;
+    letter-spacing:0.2em; text-transform:uppercase; color:#fff; text-decoration:none;
+    background:var(--discord); padding:9px 22px; border-radius:6px;
+    display:flex; align-items:center; gap:8px; transition:all 0.2s;
+  }
+  .footer-discord:hover { background:var(--discord-dk); transform:translateY(-1px); }
+
+  /* ── TOAST ── */
+  .toast {
+    position:fixed; bottom:32px; right:32px;
+    background:var(--surface2); border:1px solid var(--orange); border-radius:8px;
+    padding:16px 24px; font-weight:600; font-size:0.9rem; letter-spacing:0.1em;
+    color:var(--cream); z-index:950; transform:translateY(80px); opacity:0;
+    transition:all 0.3s ease; box-shadow:0 8px 32px #00000066, 0 0 20px #e8730a22;
+  }
+  .toast.show { transform:translateY(0); opacity:1; }
+
+  /* ── SCROLL REVEAL ── */
+  .reveal { opacity:0; transform:translateY(24px); transition:opacity 0.6s ease, transform 0.6s ease; }
+  .reveal.visible { opacity:1; transform:translateY(0); }
+
+  /* ── RESPONSIVE ── */
+  @media(max-width:640px){
+    nav { padding:14px 20px; }
+    .nav-links { gap:14px; }
+    footer { padding:28px 20px; flex-direction:column; align-items:flex-start; }
+    .key-notice { flex-direction: column; align-items: flex-start; }
+  }
+
+  .dc-svg { fill: currentColor; }
+</style>
+</head>
+<body>
+
+<div class="embers" id="embers"></div>
+
+<!-- ── NAV ── -->
+<nav>
+  <div class="nav-logo">🔥 Toasty Hub</div>
+  <div class="nav-links">
+    <a href="#script">Script</a>
+    <a href="#games">Games</a>
+    <a href="#about">About</a>
+    <a href="https://discord.gg/ETH98p8AmT" target="_blank" class="nav-discord">
+      <svg width="15" height="15" viewBox="0 0 24 24" class="dc-svg"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057.1 18.08.11 18.1.127 18.115a19.9 19.9 0 0 0 5.993 3.03.077.077 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
+      Discord
+    </a>
+  </div>
+</nav>
+
+<!-- ── HERO ── -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-glow"></div>
+  <div class="hero-banner">
+    <img src="images/toastie-banner.png" alt="Toasty Hub">
+  </div>
+  <p class="hero-subtitle">🍞 The hottest script hub for Roblox</p>
+  <div class="hero-cta">
+    <a href="#script" class="btn-primary">Get the Script</a>
+    <a href="https://discord.gg/ETH98p8AmT" target="_blank" class="btn-discord">
+      <svg width="18" height="18" viewBox="0 0 24 24" class="dc-svg"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057.1 18.08.11 18.1.127 18.115a19.9 19.9 0 0 0 5.993 3.03.077.077 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
+      Join Discord
+    </a>
+    <a href="#games" class="btn-secondary">Supported Games</a>
+  </div>
+</section>
+
+<!-- STATS -->
+<div class="stats-bar">
+  <div class="stat-item"><span class="stat-value">7+</span><div class="stat-label">Games</div></div>
+  <div class="stat-item"><span class="stat-value">1</span><div class="stat-label">Loader</div></div>
+  <div class="stat-item"><span class="stat-value">Free</span><div class="stat-label">Always</div></div>
+  <div class="stat-item"><span class="stat-value">🔥</span><div class="stat-label">Community</div></div>
+</div>
+
+<!-- ── SCRIPT ── -->
+<section id="script">
+  <div class="section-label">Step 1</div>
+  <h2 class="section-title">Loader Script</h2>
+
+  <!-- KEY SYSTEM NOTICE — just info, no gate -->
+  <div class="key-notice reveal">
+    <div class="key-notice-left">
+      <div class="key-notice-icon">🔑</div>
+      <div class="key-notice-text">
+        <strong>Key System Active</strong>
+        <span>This script uses a key system. Get your free key on our Discord!</span>
+      </div>
+    </div>
+    <a href="https://discord.gg/ETH98p8AmT" target="_blank" class="key-notice-btn">
+      <svg width="15" height="15" viewBox="0 0 24 24" class="dc-svg"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057.1 18.08.11 18.1.127 18.115a19.9 19.9 0 0 0 5.993 3.03.077.077 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
+      Get Free Key
+    </a>
+  </div>
+
+  <div class="script-card reveal">
+    <div class="script-card-header">
+      <div class="dot dot-red"></div>
+      <div class="dot dot-yellow"></div>
+      <div class="dot dot-green"></div>
+      <span class="script-card-title">Roblox Loader</span>
+    </div>
+    <div class="script-code"><span class="kw">loadstring</span>(<span class="kw">game</span>:<span class="kw">HttpGet</span>(<span class="str">"https://api.jnkie.com/api/v1/luascripts/public/3d56b3886f68d784b8beabb6840912b5d9fc31a7030a6f89b21154b09cf2f7d5/download"</span>))()</div>
+    <div class="script-footer">
+      <span class="script-footer-hint">⚡ Paste in your executor and run</span>
+      <button class="copy-btn" id="copyBtn" onclick="copyScript()"><span>📋</span> Copy Script</button>
+    </div>
+  </div>
+</section>
+
+<div class="divider"><span class="divider-icon">🔥</span></div>
+
+<!-- HOW TO USE -->
+<section>
+  <div class="section-label">Guide</div>
+  <h2 class="section-title">How to Use</h2>
+  <div class="steps-grid">
+    <div class="step-card reveal">
+      <div class="step-number">01</div>
+      <div class="step-title">Get a Free Key</div>
+      <p class="step-text">Join our Discord and grab a free access key from the key channel. It's quick and free!</p>
+    </div>
+    <div class="step-card reveal">
+      <div class="step-number">02</div>
+      <div class="step-title">Get an Executor</div>
+      <p class="step-text">Download a Roblox script executor. Ask in Discord for recommendations.</p>
+    </div>
+    <div class="step-card reveal">
+      <div class="step-number">03</div>
+      <div class="step-title">Copy the Script</div>
+      <p class="step-text">Hit the "Copy Script" button above to grab the Toasty Hub loader.</p>
+    </div>
+    <div class="step-card reveal">
+      <div class="step-number">04</div>
+      <div class="step-title">Execute & Enjoy</div>
+      <p class="step-text">Paste in your executor, enter your key when prompted, and enjoy!</p>
+    </div>
+  </div>
+</section>
+
+<div class="divider"><span class="divider-icon">🍞</span></div>
+
+<!-- GAMES -->
+<section id="games">
+  <div class="section-label">Supported Games</div>
+  <h2 class="section-title">Where We Burn</h2>
+  <div class="games-grid">
+    <div class="game-card reveal"><div class="game-icon">⚒️</div><div class="game-info"><div class="game-name">The Forge</div><div class="game-badge">✓ Supported</div></div></div>
+    <div class="game-card reveal"><div class="game-icon">🌙</div><div class="game-info"><div class="game-name">99 Nights Only in Game</div><div class="game-badge">✓ Supported</div></div></div>
+    <div class="game-card reveal"><div class="game-icon">💀</div><div class="game-info"><div class="game-name">Forsaken</div><div class="game-badge">✓ Supported</div></div></div>
+    <div class="game-card reveal"><div class="game-icon">⚡</div><div class="game-info"><div class="game-name">Violence D</div><div class="game-badge">✓ Supported</div></div></div>
+    <div class="game-card reveal"><div class="game-icon">⚽</div><div class="game-info"><div class="game-name">Blue Lock</div><div class="game-badge">✓ Supported</div></div></div>
+    <div class="game-card reveal"><div class="game-icon">🛹</div><div class="game-info"><div class="game-name">Skateboard Obby</div><div class="game-badge">✓ Supported</div></div></div>
+    <div class="game-card reveal"><div class="game-icon">🚢</div><div class="game-info"><div class="game-name">Build a Boat for Treasure</div><div class="game-badge">✓ Supported</div></div></div>
+  </div>
+</section>
+
+<div class="divider"><span class="divider-icon">⚡</span></div>
+
+<!-- FEATURES -->
+<section>
+  <div class="section-label">Why Toasty</div>
+  <h2 class="section-title">Built Different</h2>
+  <div class="features-grid">
+    <div class="feature-card reveal"><div class="feature-icon">🔥</div><div class="feature-title">Always Hot</div><p class="feature-text">Scripts constantly updated and tested. Fresh content so you're never left behind.</p></div>
+    <div class="feature-card reveal"><div class="feature-icon">⚡</div><div class="feature-title">One Loader</div><p class="feature-text">One script, all games. No switching, no hassle — just paste and play.</p></div>
+    <div class="feature-card reveal"><div class="feature-icon">🔑</div><div class="feature-title">Free Key System</div><p class="feature-text">Keys are free and available on our Discord. Simple, fair access for the whole community.</p></div>
+    <div class="feature-card reveal"><div class="feature-icon">🛡️</div><div class="feature-title">Community Backed</div><p class="feature-text">Built by the community. Join Discord to get updates and request new games.</p></div>
+  </div>
+</section>
+
+<div class="divider"><span class="divider-icon">💬</span></div>
+
+<!-- DISCORD -->
+<section id="discord">
+  <div class="section-label">Community</div>
+  <h2 class="section-title">Join the Hub</h2>
+  <div class="discord-card reveal">
+    <span class="discord-icon-wrap">
+      <svg width="56" height="56" viewBox="0 0 24 24" fill="#5865F2"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057.1 18.08.11 18.1.127 18.115a19.9 19.9 0 0 0 5.993 3.03.077.077 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
+    </span>
+    <div class="discord-title">Come Hang with the Toasties</div>
+    <p class="discord-desc">Get support, grab your free key, request new games, and stay up to date with script updates.</p>
+    <div class="discord-perks">
+      <span class="discord-perk">🔑 Free Keys</span>
+      <span class="discord-perk">🔔 Update Alerts</span>
+      <span class="discord-perk">🎮 Game Requests</span>
+      <span class="discord-perk">🛠️ Support</span>
+    </div>
+    <a href="https://discord.gg/ETH98p8AmT" target="_blank" class="btn-discord" style="display:inline-flex;font-size:1.1rem;padding:16px 44px;">
+      <svg width="22" height="22" viewBox="0 0 24 24" class="dc-svg"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057.1 18.08.11 18.1.127 18.115a19.9 19.9 0 0 0 5.993 3.03.077.077 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
+      Join Now — It's Free
+    </a>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section id="about">
+  <div class="mascot-section reveal">
+    <img src="images/toasties.png" alt="Toasties Mascot" class="mascot-img">
+    <div class="mascot-text">
+      <div class="section-label" style="text-align:left">About Us</div>
+      <div class="mascot-title">We Are the Toasties</div>
+      <p class="mascot-desc">Toasty Hub started as a small Roblox script community and grew into something much bigger. Powerful, reliable scripts for your favourite games — wrapped in one crispy loader. Join the server, stay toasty. 🍞🔥</p>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:24px;">
+        <a href="#script" class="btn-primary">Get Started</a>
+        <a href="https://discord.gg/ETH98p8AmT" target="_blank" class="btn-discord">Join Discord</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">🔥 Toasty Hub</div>
+  <div class="footer-text">© 2025 Toasty Hub · Roblox Script Community</div>
+  <a href="https://discord.gg/ETH98p8AmT" target="_blank" class="footer-discord">
+    <svg width="16" height="16" viewBox="0 0 24 24" class="dc-svg"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057.1 18.08.11 18.1.127 18.115a19.9 19.9 0 0 0 5.993 3.03.077.077 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
+    Join Discord
+  </a>
+</footer>
+
+<div class="toast" id="toast">✅ Script copied!</div>
+
+<script>
+// ── EMBER PARTICLES ──
+const container = document.getElementById('embers');
+for (let i = 0; i < 22; i++) {
+  const e = document.createElement('div');
+  e.className = 'ember';
+  const sz = Math.random() * 4 + 1;
+  e.style.cssText = `
+    width:${sz}px; height:${sz}px;
+    left:${Math.random()*100}%;
+    --dx:${(Math.random()-0.5)*200}px;
+    animation-duration:${Math.random()*8+6}s;
+    animation-delay:${Math.random()*10}s;
+    filter:blur(${Math.random()}px);
+    background:${Math.random()>.5?'#e8730a':'#c4570a'};
+  `;
+  container.appendChild(e);
+}
+
+// ── COPY SCRIPT ──
+const SCRIPT = `loadstring(game:HttpGet("https://api.jnkie.com/api/v1/luascripts/public/3d56b3886f68d784b8beabb6840912b5d9fc31a7030a6f89b21154b09cf2f7d5/download"))()`;
+function copyScript() {
+  navigator.clipboard.writeText(SCRIPT).then(() => {
+    const btn = document.getElementById('copyBtn');
+    btn.classList.add('copied');
+    btn.innerHTML = '<span>✅</span> Copied!';
+    const t = document.getElementById('toast');
+    t.classList.add('show');
+    setTimeout(() => {
+      t.classList.remove('show');
+      btn.classList.remove('copied');
+      btn.innerHTML = '<span>📋</span> Copy Script';
+    }, 2500);
+  });
+}
+
+// ── SCROLL REVEAL ──
+document.querySelectorAll('.reveal').forEach(el =>
+  new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.1 }).observe(el)
+);
+</script>
+</body>
+</html>
