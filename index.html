@@ -630,6 +630,12 @@ async function loadFromSupabase() {
   document.querySelectorAll('a[href*="discord.gg"]').forEach(a => a.href = cfg.discord);
   document.querySelector('.discord-title').textContent = cfg.discordTitle;
   document.querySelector('.discord-desc').textContent = cfg.discordDesc;
+  // Hero subtitle
+  const heroSub = document.querySelector('.hero-subtitle');
+  if (heroSub) heroSub.textContent = cfg.subtitle;
+  // About / mascot text
+  const mascotDesc = document.querySelector('.mascot-desc');
+  if (mascotDesc) mascotDesc.textContent = cfg.about;
   const stats = document.querySelectorAll('.stat-item');
   [[cfg.stat1val,cfg.stat1lbl],[cfg.stat2val,cfg.stat2lbl],[cfg.stat3val,cfg.stat3lbl],[cfg.stat4val,cfg.stat4lbl]]
     .forEach(([v,l],i) => { if(stats[i]){ stats[i].querySelector('.stat-value').textContent=v; stats[i].querySelector('.stat-label').textContent=l; }});
